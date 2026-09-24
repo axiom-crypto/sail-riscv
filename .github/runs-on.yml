@@ -1,0 +1,48 @@
+# Runner presets for RunsOn, referenced from workflows as:
+#
+#   runs-on: runs-on=${{ github.run_id }}-<unique-per-job>/runner=sail-ci
+#
+# The suffix must differ per job: one machine is created per job, and two jobs
+# in the same run cannot share one.
+#
+# One preset per Linux image the CI matrix needs. `matrix.os` names the leg; the
+# image here is what the leg runs on. macOS legs carry no preset and stay on
+# GitHub-hosted runners, as RunsOn does not support macOS.
+# https://runs-on.com/runners/macos/
+#
+# spot machines can be reclaimed mid-job, which surfaces as a failed job.
+runners:
+  sail-ci:
+    family: ["m7i"]
+    cpu: [8, 16]
+    ram: [32, 64]
+    image: "ubuntu24-full-x64"
+    volume: 100gb
+    spot: "capacity-optimized"
+
+  # s3-cache intercepts the cache and artifact endpoints, so every job using
+  # this preset must run runs-on/action@v2 as its first step.
+  sail-ci-cache:
+    family: ["m7i"]
+    cpu: [8, 16]
+    ram: [32, 64]
+    image: "ubuntu24-full-x64"
+    volume: 100gb
+    spot: "capacity-optimized"
+    extras: ["s3-cache"]
+
+  sail-ci-2204:
+    family: ["m7i"]
+    cpu: [8, 16]
+    ram: [32, 64]
+    image: "ubuntu22-full-x64"
+    volume: 100gb
+    spot: "capacity-optimized"
+
+  sail-ci-arm64:
+    family: ["m7g"]
+    cpu: [8, 16]
+    ram: [32, 64]
+    image: "ubuntu24-full-arm64"
+    volume: 100gb
+    spot: "capacity-optimized"
