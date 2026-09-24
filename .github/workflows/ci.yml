@@ -11,17 +11,21 @@ jobs:
           - os: ubuntu-22.04
             cmake_version: "3.20.0"
             first_party_tests: true
+            runner: runs-on=${{ github.run_id }}-ci-u2204-c320/runner=sail-ci-2204
           - os: ubuntu-22.04
             cmake_version: "4.1.2"
             first_party_tests: true
             run_all_steps: true
+            runner: runs-on=${{ github.run_id }}-ci-u2204-c412/runner=sail-ci-2204
           - os: ubuntu-24.04-arm
             cmake_version: "3.20.0"
             first_party_tests: true
+            runner: runs-on=${{ github.run_id }}-ci-arm-c320/runner=sail-ci-arm64
           - os: ubuntu-24.04-arm
             cmake_version: "4.1.2"
             first_party_tests: true
             clang_tidy: true
+            runner: runs-on=${{ github.run_id }}-ci-arm-c412/runner=sail-ci-arm64
           - os: macos-latest
             cmake_version: "3.20.0"
             first_party_tests: true
@@ -32,12 +36,19 @@ jobs:
             container: rockylinux:8.9.20231119
             cmake_version: "3.20.0"
             first_party_tests: false
+            runner: runs-on=${{ github.run_id }}-ci-rocky-x64/runner=sail-ci
           - os: ubuntu-24.04-arm
             container: rockylinux:8.9.20231119
             cmake_version: "3.20.0"
             first_party_tests: false
+            runner: runs-on=${{ github.run_id }}-ci-rocky-arm64/runner=sail-ci-arm64
 
-    runs-on: ${{ matrix.os }}
+    # RunsOn (self-hosted AWS) runners are used only for events that only
+    # collaborators can trigger. Pull requests from forks fall back to the
+    # GitHub-hosted runner for the same job, so code from outside the
+    # repository never executes on our infrastructure. runs-on/action skips
+    # its work on other runners, so no further changes are needed.
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && matrix.runner || matrix.os }}
     container: ${{ matrix.container }}
 
     steps:
@@ -108,10 +119,15 @@ jobs:
 
   linux:
     name: "Linux boot"
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && format('runs-on={0}-ci-linux-boot/runner=sail-ci-cache', github.run_id) || 'ubuntu-latest' }}
     steps:
+      # Without this, actions/cache silently uses GitHub's cache, not S3.
+      - uses: runs-on/action@v2
+
       - name: Install packages
-        run: sudo apt-get install -y --no-install-recommends device-tree-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends device-tree-compiler
 
       - name: Check out repository code
         uses: actions/checkout@v7
@@ -136,8 +152,8 @@ jobs:
         run: make -C os-boot/linux --jobs=$(nproc)
 
       - name: Cache Linux image
-        # Update cache only on the master branch
-        if: steps.linux-cache-restore.outputs.cache-hit != 'true' && github.ref == 'refs/heads/master'
+        # Update cache only on the repository's default branch.
+        if: steps.linux-cache-restore.outputs.cache-hit != 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: actions/cache/save@v6
         with:
           path: os-boot/linux/build/fw_payload.elf
@@ -157,7 +173,7 @@ jobs:
   # A skipped job is considered passing by GitHub, so this job needs to
   # always run and then checks the results of all of the jobs it depends on.
   ci_pass:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && format('runs-on={0}-ci-pass/runner=sail-ci', github.run_id) || 'ubuntu-latest' }}
     needs: [build, linux]
     if: "${{ always() }}"
     steps:

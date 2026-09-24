@@ -54,7 +54,12 @@ function redirect_callback(_) = ()
 /// Called on interrupts and exceptions. The exc_code does not include the 'interrupt' bit which is
 /// in a separate bool.
 val trap_callback = pure {cpp: "trap_callback"} : (/* is_interrupt */ bool, /* interrupt/exception cause */ exc_code) -> unit
+$ifdef OPENVM
+function trap_callback(_, _) =
+  internal_error(__FILE__, __LINE__, "traps fail immediately in the OpenVM model")
+$else
 function trap_callback(_) = ()
+$endif
 
 /// Called on xrets (mret <=> true, sret <=> false).
 val xret_callback = pure {cpp: "xret_callback"} : (/* is_mret */ bool) -> unit

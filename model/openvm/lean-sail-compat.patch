@@ -1,0 +1,63 @@
+diff --git a/Sail/Sail.lean b/Sail/Sail.lean
+--- a/Sail/Sail.lean
++++ b/Sail/Sail.lean
+@@ -246,8 +246,9 @@ def set_slice_int (len : Nat) (n : Int) (lo : Nat) (x : BitVec len) : Int :=
+ def set_slice {n : Nat} (m : Nat) (bv : BitVec n) (start : Nat) (bv' : BitVec m) : BitVec n :=
+   BitVec.updateSubrange' bv start m bv'
+ 
++-- Count characters on both sides so a non-ASCII suffix does not affect the space count.
+ def String.leadingSpaces (s : String) : Nat :=
+-  s.length - (s.dropWhile (· = ' ')).utf8ByteSize
++  s.length - (s.dropWhile (· = ' ')).positions.length
+ 
+ abbrev Vector.length (_v : Vector α n) : Nat := n
+ 
+@@ -454,6 +455,16 @@
+ 
+ def prerr : String → Unit := fun _ => ()
+ 
++/-- The Sail backend emits discarded pure actions as `(pure value)`. Lean 4.34's `do`
++elaborator elaborates the continuation twice when optimizing a pure Unit action, making long
++sequences exponential. An identity wrapper bypasses that syntactic optimization and reduces
++away definitionally. Preserve the action identifier so it still resolves at the call site.
++This scoped rule is active when generated modules open `Sail`. -/
++scoped macro_rules
++  | `(doElem| ($action:ident $value:term)) => do
++    unless action.getId == `pure do Lean.Macro.throwUnsupported
++    `(doElem| (id ($action $value)))
++
+ end Sail
+ 
+ namespace PreSail
+@@ -537,13 +548,13 @@ def readReg (r : Register) : PreSailM RegisterType c ue (RegisterType r) := do
+   pure s
+ 
+ @[simp_sail]
+-def readRegRef (reg_ref : @RegisterRef Register RegisterType α) : PreSailM RegisterType c ue α := do
++def readRegRef (reg_ref : @RegisterRef Register RegisterType α) : PreSailM RegisterType c ue α :=
+   match reg_ref with | .Reg r => readReg r
+ 
+ @[simp_sail]
+ def writeRegRef (reg_ref : @RegisterRef Register RegisterType α) (a : α) :
+-  PreSailM RegisterType c ue Unit := do
+-  match reg_ref with | .Reg r => writeReg r a
++  PreSailM RegisterType c ue Unit :=
++  match reg_ref with | .Reg r => do writeReg r a
+ 
+ @[simp_sail]
+ def reg_deref (reg_ref : @RegisterRef Register RegisterType α) : PreSailM RegisterType c ue α :=
+@@ -553,6 +564,14 @@ def reg_deref (reg_ref : @RegisterRef Register RegisterType α) : PreSailM Regis
+ def assert (p : Bool) (s : String) : PreSailM RegisterType c ue Unit :=
+   if p then pure () else throw (.Assertion s)
+ 
++/-- Lean's `do` notation reserves `assert` as a verification-condition element. Generated Sail
++code calls `assert cond msg` as a plain monadic action, so redirect that element to the
++`Sail.assert` specialization the Sail backend emits for the model. The target identifier is
++built with `mkIdent` so it is resolved at the call site, where that specialization is in scope. -/
++macro_rules
++  | `(doElem| assert $cond:term $msg:term) =>
++    `(doElem| $(Lean.mkIdent `Sail.assert):ident $cond $msg)
++
+ section ConcurrencyInterface
+ 
+ @[simp_sail]

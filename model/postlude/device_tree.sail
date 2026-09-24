@@ -122,9 +122,9 @@ private function generate_dts_memories(pmas : list(PMA_Region)) -> string =
 // Generates a `riscv,<prefix>-block-size` property line if the corresponding
 // cache-block extension is supported. The size is 2^plat_cache_block_size_exp
 // bytes, the same value used by the Zicbom/Zicboz/Zicbop instruction semantics.
-private function generate_cbo_block_size(prefix : string, ext : extension) -> string = {
+private function generate_cbo_block_size(property_prefix : string, ext : extension) -> string = {
   if hartSupports(ext)
-  then "      riscv," ^ prefix ^ "-block-size = <" ^ dec_str(2 ^ plat_cache_block_size_exp) ^ ">;\n"
+  then "      riscv," ^ property_prefix ^ "-block-size = <" ^ dec_str(2 ^ plat_cache_block_size_exp) ^ ">;\n"
   else ""
 }
 
