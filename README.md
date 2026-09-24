@@ -1,5 +1,9 @@
 # Formal Specification of the RISC-V ISA
 
+**OpenVM fork.** This fork adapts the upstream Sail RISC-V model for OpenVM and adds an OpenVM
+extension. The OpenVM model fetches instructions from a read-only program image, disables trap
+handling, and targets RV32IM. The extension adds instructions for OpenVM I/O and termination.
+
 This repository contains a formal specification of the RISC-V architecture, written in
 [Sail](https://github.com/rems-project/sail). It has been adopted by RISC-V International.
 

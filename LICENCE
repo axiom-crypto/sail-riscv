@@ -67,6 +67,16 @@ This project has received funding from the European Research Council
 (ERC) under the European Union’s Horizon 2020 research and innovation
 programme (grant agreement 789108, ELVER).
 
+The OpenVM adaptation of this model, comprising the files under model/openvm/
+and model/extensions/Xopenvm/ together with the OpenVM-specific changes made
+elsewhere in this repository, is
+
+Copyright (c) 2026 Intrinsic Technologies, Inc.
+
+All rights reserved.
+
+It is subject to the same BSD two-clause licence below.
+
 ------------------------------------------------------------------
 
 Redistribution and use in source and binary forms, with or without

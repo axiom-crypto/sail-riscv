@@ -56,7 +56,8 @@ runs:
       if: runner.os == 'Linux' && job.container == null
       shell: bash
       run: |
-        sudo apt install -y --no-install-recommends pkg-config libgmp-dev curl ninja-build
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends pkg-config libgmp-dev curl ninja-build
 
     - name: Install packages (Linux container)
       if: runner.os == 'Linux' && job.container != null
@@ -76,6 +77,9 @@ runs:
       run: |
         # Install newer clang manually because current Ubuntu runners don't have
         # a clang version that supports newer RISC-V extensions.
+        # llvm.sh requires add-apt-repository, from software-properties-common.
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends software-properties-common
         curl -O https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         CLANG_VERSION=21
@@ -128,7 +132,8 @@ runs:
       shell: bash
       run: |
         if [ "${{ runner.os }}" = "Linux" ]; then
-          sudo apt install -y --no-install-recommends opam z3
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends opam z3
         elif [ "${{ runner.os }}" = "macOS" ]; then
           brew install z3
         fi
@@ -150,8 +155,8 @@ runs:
         (cd sail; make install)
 
     - name: Save cached opam (macOS or latest Sail)
-      # Update cache only on the master branch
-      if: (runner.os == 'macOS' || inputs.sail-version == 'latest') && github.ref == 'refs/heads/master'
+      # Update cache only on the repository's default branch.
+      if: (runner.os == 'macOS' || inputs.sail-version == 'latest') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
       id: cache-opam-save
       uses: actions/cache/save@v4
       with:

@@ -4,7 +4,12 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # RunsOn (self-hosted AWS) runners are used only for events that only
+    # collaborators can trigger. Pull requests from forks fall back to the
+    # GitHub-hosted runner for the same job, so code from outside the
+    # repository never executes on our infrastructure. runs-on/action skips
+    # its work on other runners, so no further changes are needed.
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && format('runs-on={0}-rocq/runner=sail-ci', github.run_id) || 'ubuntu-latest' }}
     env:
       OPAMROOT: /home/rocq/.opam
       # See root comment below

@@ -8,7 +8,10 @@ on:
 
 jobs:
   publish-test-results:
-    runs-on: ubuntu-latest
+    # Results of a CI run for a pull request from a fork are published from a
+    # GitHub-hosted runner; only runs for this repository's own commits use
+    # the RunsOn (self-hosted AWS) runner.
+    runs-on: ${{ github.event.workflow_run.head_repository.full_name == github.repository && format('runs-on={0}-test-results/runner=sail-ci', github.run_id) || 'ubuntu-latest' }}
     if: github.event.workflow_run.conclusion != 'skipped'
     steps:
       - name: Download artifacts

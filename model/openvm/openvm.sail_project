@@ -1,0 +1,7 @@
+openvm_profile {
+  after core
+  before postlude
+  requires core
+
+  files openvm_profile.sail
+}
