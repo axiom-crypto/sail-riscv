@@ -13,6 +13,11 @@ jobs:
     # the RunsOn (self-hosted AWS) runner.
     runs-on: ${{ github.event.workflow_run.head_repository.full_name == github.repository && format('runs-on={0}-test-results/runner=sail-ci', github.run_id) || 'ubuntu-latest' }}
     if: github.event.workflow_run.conclusion != 'skipped'
+    # This repository's default GITHUB_TOKEN is read-only.
+    permissions:
+      actions: read # download the CI run's artifacts
+      checks: write # create the test-results check run
+      pull-requests: write # comment the results on pull requests
     steps:
       - name: Download artifacts
         uses: actions/github-script@v9
