@@ -77,7 +77,7 @@ termination_measure store_hint_words(_, n) = n
 function execute_hint_words(addr : xlenbits, n : int) -> ExecutionResult = {
   let base = unsigned(addr);
   let end_addr = base + 4 * n;
-  if n < 0 | openvm_hint_word_limit <= n then Illegal_Instruction()
+  if n <= 0 | openvm_hint_word_limit <= n then Illegal_Instruction()
   else if base % 4 != 0 then memory_exception(Virtaddr(addr), E_SAMO_Addr_Align())
   else if openvm_public_values_size <= base then memory_exception(Virtaddr(addr), E_SAMO_Access_Fault())
   else if openvm_public_values_size < end_addr then memory_exception(Virtaddr(addr), E_SAMO_Access_Fault())
